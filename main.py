@@ -1,10 +1,11 @@
 from calendar import day_name, month_name
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta, timezone
 from dateutil.relativedelta import MO, TU, WE, TH, FR, SA, SU, relativedelta
 from icalendar import Calendar
 from os.path import isfile
 from tkinter import *
 from tkinter import filedialog
+from tzlocal import get_localzone
 
 
 def display_calendar(file_path):
@@ -17,61 +18,80 @@ def display_calendar(file_path):
 
     for component in calendar.walk():
         if component.name == 'VEVENT':
-            event_info, date_start = get_event_info(component)
+            event_info, start_date = get_event_info(component)
 
             for i in range(7):
-                find_events_this_week(date_start, events, event_info, i)
-
-    for i in range(7):
-        events[i].sort()
-        textboxes[i].config(state=NORMAL)
+                find_events_this_week(start_date, events, event_info, i)
 
     for i in range(7):
         for j in range(len(events[i])):
             if events[i][j][3] != '':
                 events = split_multiple_day_events(events, i, j)
+        textboxes[i].config(state=NORMAL)
+
+    for i in range(7):
+        events[i].sort()
+        for j in range(len(events[i])):
             textboxes[i].insert(END, events[i][j][0] + '-' + events[i][j][1] + '\n' + events[i][j][2] + '\n')
         textboxes[i].config(state=DISABLED)
 
     file.close()
 
 
-def find_events_this_week(date_start, events, event_info, weekday_nr):
+def find_events_this_week(start_date, events, event_info, weekday_nr):
     weekday_abbr = [MO, TU, WE, TH, FR, SA, SU]
     today = date.today()
     if today.weekday() > weekday_nr:
-        if date_start == str(today + relativedelta(weekday=weekday_abbr[weekday_nr](-1))):
+        if start_date == str(today + relativedelta(weekday=weekday_abbr[weekday_nr](-1))):
             events[weekday_nr].append(event_info)
-        elif (date.fromisoformat(date_start).isocalendar().week != today.isocalendar().week and
+        elif (date.fromisoformat(start_date).isocalendar().week != today.isocalendar().week and
               event_info[3] == str(today + relativedelta(weekday=weekday_abbr[weekday_nr](-1)))):
+            event_info[0] = str(time(0, 0))[:5]
             events[0].append(event_info)
     elif today.weekday() <= weekday_nr:
-        if date_start == str(today + relativedelta(weekday=weekday_nr)):
+        if start_date == str(today + relativedelta(weekday=weekday_nr)):
             events[weekday_nr].append(event_info)
-        elif (date.fromisoformat(date_start).isocalendar().week != today.isocalendar().week and
+        elif (date.fromisoformat(start_date).isocalendar().week != today.isocalendar().week and
               event_info[3] == str(today + relativedelta(weekday=weekday_nr))):
+            event_info[0] = str(time(0, 0))[:5]
             events[0].append(event_info)
 
 
 def get_event_info(component):
-    time_start = str(component.get('dtstart'))[21:26]
-    time_end = str(component.get('dtend'))[21:26]
+    start = str(component.get('dtstart'))[10:26]
+    end = str(component.get('dtend'))[10:26]
+
+    local_timezone = get_localzone()
+
+    if not (start[10] == ',' and end[10] == ','):
+        start = datetime.fromisoformat(start)
+        start = start.replace(tzinfo=timezone.utc)
+        start_local = start.astimezone(local_timezone)
+        end = datetime.fromisoformat(end)
+        end = end.replace(tzinfo=timezone.utc)
+        end_local = end.astimezone(local_timezone)
+    else:
+        start = start.replace(start, start[:10] + ' ' + str(time(0, 0))[:5])
+        start_local = start
+        end = end.replace(end, start[:10] + ' ' + str(time(23, 59))[:5])
+        end_local = end
+
+    start_date = str(start_local)[:10]
+    start_time = str(start_local)[11:16]
+    end_date = str(end_local)[:10]
+    end_time = str(end_local)[11:16]
+
+    if end_time == '00:00':
+        end_date = str(date.fromisoformat(end_date) - timedelta(days=1))
+
     event_name = str(component.get('summary'))
 
-    date_start = str(component.get('dtstart'))[10:20]
-    date_end = str(component.get('dtend'))[10:20]
+    event_info = [start_time, end_time, event_name, '']
 
-    if time_start[0] == ' ' and time_end[0] == ' ':
-        time_start = str(time(0, 0))[:5]
-        time_end = str(time(23, 59))[:5]
-        date_end = date_start
+    if start_date != end_date:
+        event_info[3] = end_date
 
-    event_info = [time_start, time_end, event_name, '']
-
-    if date_start != date_end:
-        event_info[3] = date_end
-
-    return event_info, date_start
+    return event_info, start_date
 
 
 def initialize_window():
@@ -169,22 +189,24 @@ def split_multiple_day_events(events, weekday_nr, event_nr):
     day_start = weekday_nr
     day_end = (datetime.fromisoformat(events[weekday_nr][event_nr][3])).weekday()
     parts = abs(day_end - day_start + 1)
-    part_first = [events[weekday_nr][event_nr][0], str(time(23, 59))[:5],
-                  events[weekday_nr][event_nr][2], '']
 
-    if (weekday_nr + parts - 1) < 7:
-        part_last = [str(time(0, 0))[:5], events[weekday_nr][event_nr][1],
-                     events[weekday_nr][event_nr][2], '']
-        events[weekday_nr + parts - 1].append(part_last)
+    if parts > 1:
+        part_first = [events[weekday_nr][event_nr][0], str(time(23, 59))[:5],
+                      events[weekday_nr][event_nr][2], '']
+        if parts > 2:
+            for i in range(1, parts - 1):
+                if (weekday_nr + i) < 7:
+                    part_middle = [str(time(0, 0))[:5], str(time(23, 59))[:5],
+                                   events[weekday_nr][event_nr][2], '']
+                    events[weekday_nr + i].append(part_middle)
+        if (weekday_nr + parts - 1) < 7:
+            part_last = [str(time(0, 0))[:5], events[weekday_nr][event_nr][1],
+                         events[weekday_nr][event_nr][2], '']
+            events[weekday_nr + parts - 1].append(part_last)
+    elif parts == 1:
+        part_first = events[weekday_nr][event_nr]
 
     events[weekday_nr][event_nr] = part_first
-
-    if parts > 2:
-        for i in range(1, parts - 1):
-            if (weekday_nr + i) < 7:
-                part_middle = [str(time(0, 0))[:5], str(time(23, 59))[:5],
-                               events[weekday_nr][event_nr][2], '']
-                events[weekday_nr + i].append(part_middle)
 
     return events
 
