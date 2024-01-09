@@ -1,5 +1,5 @@
 from calendar import day_name, month_name
-from datetime import date
+from datetime import date, datetime, time
 from dateutil.relativedelta import MO, TU, WE, TH, FR, SA, SU, relativedelta
 from icalendar import Calendar
 from os.path import isfile
@@ -28,6 +28,8 @@ def display_calendar(file_path):
 
     for i in range(7):
         for j in range(len(events[i])):
+            if events[i][j][3] != '':
+                events = split_multiple_day_events(events, i, j)
             textboxes[i].insert(END, events[i][j][0] + '-' + events[i][j][1] + '\n' + events[i][j][2] + '\n')
         textboxes[i].config(state=DISABLED)
 
@@ -44,16 +46,22 @@ def find_events_this_week(date_start, events, event_info, weekday_nr):
 
 
 def get_event_info(component):
-    time_start = str(component.get('dtstart'))[21:29]
-    time_end = str(component.get('dtend'))[21:29]
+    time_start = str(component.get('dtstart'))[21:26]
+    time_end = str(component.get('dtend'))[21:26]
     event_name = str(component.get('summary'))
-    event_info = [time_start, time_end, event_name]
 
     date_start = str(component.get('dtstart'))[10:20]
-    date_end = str(component.get('dtstart'))[10:20]
+    date_end = str(component.get('dtend'))[10:20]
+
+    if time_start[0] == ' ' and time_end[0] == ' ':
+        time_start = str(time(0, 0))[:5]
+        time_end = str(time(23, 59))[:5]
+        date_end = date_start
+
+    event_info = [time_start, time_end, event_name, '']
 
     if date_start != date_end:
-        event_info.append(date_end)
+        event_info[3] = date_end
 
     return event_info, date_start
 
@@ -149,8 +157,29 @@ def save(file_path):
     saved_file_path.close()
 
 
+def split_multiple_day_events(events, weekday_nr, event_nr):
+    day_start = weekday_nr
+    day_end = (datetime.fromisoformat(events[weekday_nr][event_nr][3])).weekday()
+    parts = day_end - day_start + 1
+    part_first = [events[weekday_nr][event_nr][0], str(time(23, 59))[:5],
+                  events[weekday_nr][event_nr][2], '']
+    part_last = [str(time(0, 0))[:5], events[weekday_nr][event_nr][1],
+                 events[weekday_nr][event_nr][2], '']
+
+    if parts > 2:
+        for i in range(1, parts - 1):
+            part_middle = [str(time(0, 0))[:5], str(time(23, 59))[:5],
+                           events[weekday_nr][event_nr][2], '']
+            events[weekday_nr + i].append(part_middle)
+
+    events[weekday_nr][event_nr] = part_first
+    events[weekday_nr + parts - 1].append(part_last)
+
+    return events
+
+
 def update_days_numbers():
-    day_numbers = [None] * 7
+    day_numbers = [0] * 7
     weekday_abbr = [MO, TU, WE, TH, FR, SA, SU]
     today = date.today()
 
