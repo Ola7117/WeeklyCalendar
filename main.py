@@ -39,10 +39,18 @@ def display_calendar(file_path):
 def find_events_this_week(date_start, events, event_info, weekday_nr):
     weekday_abbr = [MO, TU, WE, TH, FR, SA, SU]
     today = date.today()
-    if today.weekday() > weekday_nr and date_start == str(today + relativedelta(weekday=weekday_abbr[weekday_nr](-1))):
-        events[weekday_nr].append(event_info)
-    elif today.weekday() <= weekday_nr and date_start == str(today + relativedelta(weekday=weekday_nr)):
-        events[weekday_nr].append(event_info)
+    if today.weekday() > weekday_nr:
+        if date_start == str(today + relativedelta(weekday=weekday_abbr[weekday_nr](-1))):
+            events[weekday_nr].append(event_info)
+        elif (date.fromisoformat(date_start).isocalendar().week != today.isocalendar().week and
+              event_info[3] == str(today + relativedelta(weekday=weekday_abbr[weekday_nr](-1)))):
+            events[0].append(event_info)
+    elif today.weekday() <= weekday_nr:
+        if date_start == str(today + relativedelta(weekday=weekday_nr)):
+            events[weekday_nr].append(event_info)
+        elif (date.fromisoformat(date_start).isocalendar().week != today.isocalendar().week and
+              event_info[3] == str(today + relativedelta(weekday=weekday_nr))):
+            events[0].append(event_info)
 
 
 def get_event_info(component):
@@ -160,20 +168,23 @@ def save(file_path):
 def split_multiple_day_events(events, weekday_nr, event_nr):
     day_start = weekday_nr
     day_end = (datetime.fromisoformat(events[weekday_nr][event_nr][3])).weekday()
-    parts = day_end - day_start + 1
+    parts = abs(day_end - day_start + 1)
     part_first = [events[weekday_nr][event_nr][0], str(time(23, 59))[:5],
                   events[weekday_nr][event_nr][2], '']
-    part_last = [str(time(0, 0))[:5], events[weekday_nr][event_nr][1],
-                 events[weekday_nr][event_nr][2], '']
+
+    if (weekday_nr + parts - 1) < 7:
+        part_last = [str(time(0, 0))[:5], events[weekday_nr][event_nr][1],
+                     events[weekday_nr][event_nr][2], '']
+        events[weekday_nr + parts - 1].append(part_last)
+
+    events[weekday_nr][event_nr] = part_first
 
     if parts > 2:
         for i in range(1, parts - 1):
-            part_middle = [str(time(0, 0))[:5], str(time(23, 59))[:5],
-                           events[weekday_nr][event_nr][2], '']
-            events[weekday_nr + i].append(part_middle)
-
-    events[weekday_nr][event_nr] = part_first
-    events[weekday_nr + parts - 1].append(part_last)
+            if (weekday_nr + i) < 7:
+                part_middle = [str(time(0, 0))[:5], str(time(23, 59))[:5],
+                               events[weekday_nr][event_nr][2], '']
+                events[weekday_nr + i].append(part_middle)
 
     return events
 
