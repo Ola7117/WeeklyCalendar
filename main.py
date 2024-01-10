@@ -4,8 +4,7 @@ from dateutil.relativedelta import MO, TU, WE, TH, FR, SA, SU, relativedelta
 from icalendar import Calendar
 from os.path import isfile
 from tkinter import *
-from tkinter import scrolledtext
-from tkinter import filedialog
+from tkinter import filedialog, scrolledtext
 from tzlocal import get_localzone
 
 
@@ -189,13 +188,14 @@ def open_file():
         title='Open'
     )
 
-    save(file_path)
+    if file_path != '':
+        save(file_path)
 
-    for i in range(7):
-        textboxes[i].config(state=NORMAL)
-        textboxes[i].delete('1.0', END)
+        for i in range(7):
+            textboxes[i].config(state=NORMAL)
+            textboxes[i].delete('1.0', END)
 
-    display_calendar(file_path)
+        display_calendar(file_path)
 
 
 def save(file_path):
