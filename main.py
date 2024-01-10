@@ -104,13 +104,13 @@ def initialize_window():
     dark_blue = '#005580'
     window.configure(bg=blue)
 
+    day_numbers, today = update_day_numbers()
+
     weekdays = ()
     days = ()
     text = ()
     left = 5
     right = 5
-
-    day_numbers, today = update_days_numbers()
 
     for i in range(7):
         if day_name[i] != today.strftime('%A'):
@@ -230,7 +230,7 @@ def split_multiple_day_events(events, weekday_nr, event_nr):
     return events
 
 
-def update_days_numbers():
+def update_day_numbers():
     day_numbers = [0] * 7
     weekday_abbr = [MO, TU, WE, TH, FR, SA, SU]
     today = date.today()
