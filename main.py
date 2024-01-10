@@ -102,6 +102,7 @@ def initialize_window():
     window.resizable(False, False)
     blue = '#b3e6ff'
     light_blue = '#e6f7ff'
+    dark_blue = '#005580'
     window.configure(bg=blue)
 
     weekdays = ()
@@ -110,11 +111,19 @@ def initialize_window():
     left = 5
     right = 5
 
-    day_numbers = update_days_numbers()
+    day_numbers, today = update_days_numbers()
 
     for i in range(7):
-        weekdays = weekdays + (Label(bg=blue, font=('Arial', 12), text=day_name[i]),)
-        days = days + (Label(bg=blue, font=('Arial', 12), text=day_numbers[i]),)
+        if day_name[i] != today.strftime('%A'):
+            weekdays = weekdays + (Label(bg=blue, font=('Arial', 12), text=day_name[i]),)
+        else:
+            weekdays = weekdays + (Label(bg=blue, fg=dark_blue, font=('Arial', 12, 'bold'), text=day_name[i]),)
+
+        if str(day_numbers[i]) != str(today.day):
+            days = days + (Label(bg=blue, font=('Arial', 12), text=day_numbers[i]),)
+        else:
+            days = days + (Label(bg=blue, fg=dark_blue, font=('Arial', 12, 'bold'), text=day_numbers[i]),)
+
         text = text + (scrolledtext.ScrolledText(bg=light_blue, height=10, width=30),)
 
         if i < 4:
@@ -232,7 +241,7 @@ def update_days_numbers():
         else:
             day_numbers[i] = str(today + relativedelta(weekday=i))[8:11]
 
-    return day_numbers
+    return day_numbers, today
 
 
 if __name__ == '__main__':
