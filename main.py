@@ -185,8 +185,9 @@ def load():
 
 def open_file():
     file_path = filedialog.askopenfilename(
-        title='Open',
-        filetypes=(('iCalendar', '*.ics'),)
+        filetypes=(('iCalendar', '*.ics'),),
+        initialdir='C:/Users/.../Downloads',
+        title='Open'
     )
 
     save(file_path)
