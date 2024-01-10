@@ -4,6 +4,7 @@ from dateutil.relativedelta import MO, TU, WE, TH, FR, SA, SU, relativedelta
 from icalendar import Calendar
 from os.path import isfile
 from tkinter import *
+from tkinter import scrolledtext
 from tkinter import filedialog
 from tzlocal import get_localzone
 
@@ -32,7 +33,8 @@ def display_calendar(file_path):
     for i in range(7):
         events[i].sort()
         for j in range(len(events[i])):
-            textboxes[i].insert(END, events[i][j][0] + '-' + events[i][j][1] + '\n' + events[i][j][2] + '\n')
+            textboxes[i].insert(END, events[i][j][0] + '-' + events[i][j][1] + '\n', 'normal')
+            textboxes[i].insert(END, events[i][j][2] + '\n', 'bold')
         textboxes[i].config(state=DISABLED)
 
     file.close()
@@ -98,6 +100,9 @@ def initialize_window():
     window = Tk()
     window.title('Weekly Calendar')
     window.resizable(False, False)
+    blue = '#b3e6ff'
+    light_blue = '#e6f7ff'
+    window.configure(bg=blue)
 
     weekdays = ()
     days = ()
@@ -108,9 +113,9 @@ def initialize_window():
     day_numbers = update_days_numbers()
 
     for i in range(7):
-        weekdays = weekdays + (Label(text=day_name[i], font=('', 12)),)
-        days = days + (Label(text=day_numbers[i], font=('', 12)),)
-        text = text + (Text(height=10, width=30),)
+        weekdays = weekdays + (Label(bg=blue, font=('Arial', 12), text=day_name[i]),)
+        days = days + (Label(bg=blue, font=('Arial', 12), text=day_numbers[i]),)
+        text = text + (scrolledtext.ScrolledText(bg=light_blue, height=10, width=30),)
 
         if i < 4:
             if i == 0:
@@ -132,21 +137,26 @@ def initialize_window():
             days[i].grid(row=2, column=(i - 4) * 2 + 1, sticky=E, padx=(5, right), pady=(5, 5))
             text[i].grid(row=3, column=(i - 4) * 2, rowspan=3, columnspan=2, padx=(left, right), pady=(5, 10))
 
+        text[i].tag_configure('normal', font=('Arial', 10))
+        text[i].tag_configure('bold', font=('Arial', 10, 'bold'))
         text[i].config(state=DISABLED)
 
-    label_title = Label(text='Weekly Calendar', font=('', 16))
+    label_title = Label(bg=blue, font=('Arial', 16), text='Weekly Calendar')
     label_title.grid(row=3, column=6, columnspan=2, padx=10, pady=10)
+    label_title.configure()
 
     month = month_name[date.today().month]
     year = date.today().year
 
-    label_month = Label(text=str(month) + ' ' + str(year), font=('', 12))
+    label_month = Label(bg=blue, font=('Arial', 12), text=str(month) + ' ' + str(year))
     label_month.grid(row=4, column=6, columnspan=2, padx=10, pady=10)
 
     button = Button(
         window,
+        bg=light_blue,
+        command=open_file,
+        font=('Arial', 10),
         text='Open an ICS file',
-        command=open_file
     )
     button.grid(row=5, column=6, columnspan=2, padx=10, pady=10)
 
