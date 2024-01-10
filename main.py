@@ -222,7 +222,7 @@ def split_multiple_day_events(events, weekday_nr, event_nr):
             part_last = [str(time(0, 0))[:5], events[weekday_nr][event_nr][1],
                          events[weekday_nr][event_nr][2], '']
             events[weekday_nr + parts - 1].append(part_last)
-    elif parts == 1:
+    else:
         part_first = events[weekday_nr][event_nr]
 
     events[weekday_nr][event_nr] = part_first
