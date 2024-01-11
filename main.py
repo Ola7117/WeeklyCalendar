@@ -20,8 +20,9 @@ def display_calendar(file_path):
         if component.name == 'VEVENT':
             event_info, start_date = get_event_info(component)
 
+            is_all_week_event = False
             for i in range(7):
-                find_events_this_week(start_date, events, event_info, i)
+                is_all_week_event = find_events_this_week(start_date, events, event_info, i, is_all_week_event)
 
     for i in range(7):
         for j in range(len(events[i])):
@@ -39,10 +40,15 @@ def display_calendar(file_path):
     file.close()
 
 
-def find_events_this_week(start_date, events, event_info, weekday_nr):
+def find_events_this_week(start_date, events, event_info, weekday_nr, is_all_week_event):
     weekday_abbr = [MO, TU, WE, TH, FR, SA, SU]
     today = date.today()
-    if today.weekday() > weekday_nr:
+    if (date.fromisoformat(start_date) < today + relativedelta(weekday=MO(-1)) and
+        date.fromisoformat(event_info[3]) > today + relativedelta(weekday=SU(1)) and is_all_week_event == False):
+        event_info = ['00:00', '23:59', event_info[2], str(today + relativedelta(weekday=SU(1)))]
+        events[0].append(event_info)
+        is_all_week_event = True
+    elif today.weekday() > weekday_nr:
         if start_date == str(today + relativedelta(weekday=weekday_abbr[weekday_nr](-1))):
             events[weekday_nr].append(event_info)
         elif (date.fromisoformat(start_date).isocalendar().week != today.isocalendar().week and
@@ -56,7 +62,7 @@ def find_events_this_week(start_date, events, event_info, weekday_nr):
               event_info[3] == str(today + relativedelta(weekday=weekday_nr))):
             event_info[0] = '00:00'
             events[0].append(event_info)
-
+    return is_all_week_event
 
 def get_event_info(component):
     start = str(component.get('dtstart'))[10:26]
