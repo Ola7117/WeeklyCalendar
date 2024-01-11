@@ -74,9 +74,6 @@ def get_event_info(component):
     else:
         start = start.replace(start, start[:10] + ' 00:00')
         start_local = start
-        if str(component.get('summary')) == 'Narty':
-            print(end[:10])
-            print(str(date.fromisoformat(start[:10]) + relativedelta(days=+1)))
         if end[:10] == str(date.fromisoformat(start[:10]) + relativedelta(days=+1)):
             end = end.replace(end, start[:10] + ' 23:59')
         else:
@@ -212,23 +209,28 @@ def save(file_path):
 
 
 def split_multiple_day_events(events, weekday_nr, event_nr):
+    end_date = date.fromisoformat(events[weekday_nr][event_nr][3])
+
     day_start = weekday_nr
-    day_end = (datetime.fromisoformat(events[weekday_nr][event_nr][3])).weekday()
-    parts = abs(day_end - day_start + 1)
+    day_end = end_date.weekday()
+
+    if day_end >= day_start:
+        parts = day_end - day_start + 1
+    else:
+        parts = 7 - day_start
 
     if parts > 1:
-        part_first = [events[weekday_nr][event_nr][0], '23:59',
-                      events[weekday_nr][event_nr][2], '']
+        part_first = [events[weekday_nr][event_nr][0], '23:59', events[weekday_nr][event_nr][2], '']
         if parts > 2:
             for i in range(1, parts - 1):
                 if (weekday_nr + i) < 7:
-                    part_middle = ['00:00', '23:59',
-                                   events[weekday_nr][event_nr][2], '']
+                    part_middle = ['00:00', '23:59', events[weekday_nr][event_nr][2], '']
                     events[weekday_nr + i].append(part_middle)
-        if (weekday_nr + parts - 1) < 7:
-            part_last = ['00:00', events[weekday_nr][event_nr][1],
-                         events[weekday_nr][event_nr][2], '']
-            events[weekday_nr + parts - 1].append(part_last)
+        if day_end >= day_start:
+            part_last = ['00:00', events[weekday_nr][event_nr][1], events[weekday_nr][event_nr][2], '']
+        else:
+            part_last = ['00:00', '23:59', events[weekday_nr][event_nr][2], '']
+        events[weekday_nr + parts - 1].append(part_last)
     else:
         part_first = events[weekday_nr][event_nr]
 
