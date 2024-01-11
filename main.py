@@ -1,5 +1,5 @@
 from calendar import day_name, month_name
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from dateutil.relativedelta import MO, TU, WE, TH, FR, SA, SU, relativedelta
 from icalendar import Calendar
 from os.path import isfile
@@ -47,14 +47,14 @@ def find_events_this_week(start_date, events, event_info, weekday_nr):
             events[weekday_nr].append(event_info)
         elif (date.fromisoformat(start_date).isocalendar().week != today.isocalendar().week and
               event_info[3] == str(today + relativedelta(weekday=weekday_abbr[weekday_nr](-1)))):
-            event_info[0] = str(time(0, 0))[:5]
+            event_info[0] = '00:00'
             events[0].append(event_info)
     elif today.weekday() <= weekday_nr:
         if start_date == str(today + relativedelta(weekday=weekday_nr)):
             events[weekday_nr].append(event_info)
         elif (date.fromisoformat(start_date).isocalendar().week != today.isocalendar().week and
               event_info[3] == str(today + relativedelta(weekday=weekday_nr))):
-            event_info[0] = str(time(0, 0))[:5]
+            event_info[0] = '00:00'
             events[0].append(event_info)
 
 
@@ -72,9 +72,9 @@ def get_event_info(component):
         end = end.replace(tzinfo=timezone.utc)
         end_local = end.astimezone(local_timezone)
     else:
-        start = start.replace(start, start[:10] + ' ' + str(time(0, 0))[:5])
+        start = start.replace(start, start[:10] + ' 00:00')
         start_local = start
-        end = end.replace(end, start[:10] + ' ' + str(time(23, 59))[:5])
+        end = end.replace(end, start[:10] + ' 23:59')
         end_local = end
 
     start_date = str(start_local)[:10]
@@ -210,16 +210,16 @@ def split_multiple_day_events(events, weekday_nr, event_nr):
     parts = abs(day_end - day_start + 1)
 
     if parts > 1:
-        part_first = [events[weekday_nr][event_nr][0], str(time(23, 59))[:5],
+        part_first = [events[weekday_nr][event_nr][0], '23:59',
                       events[weekday_nr][event_nr][2], '']
         if parts > 2:
             for i in range(1, parts - 1):
                 if (weekday_nr + i) < 7:
-                    part_middle = [str(time(0, 0))[:5], str(time(23, 59))[:5],
+                    part_middle = ['00:00', '23:59',
                                    events[weekday_nr][event_nr][2], '']
                     events[weekday_nr + i].append(part_middle)
         if (weekday_nr + parts - 1) < 7:
-            part_last = [str(time(0, 0))[:5], events[weekday_nr][event_nr][1],
+            part_last = ['00:00', events[weekday_nr][event_nr][1],
                          events[weekday_nr][event_nr][2], '']
             events[weekday_nr + parts - 1].append(part_last)
     else:
