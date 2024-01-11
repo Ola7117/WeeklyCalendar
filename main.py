@@ -74,7 +74,14 @@ def get_event_info(component):
     else:
         start = start.replace(start, start[:10] + ' 00:00')
         start_local = start
-        end = end.replace(end, start[:10] + ' 23:59')
+        if str(component.get('summary')) == 'Narty':
+            print(end[:10])
+            print(str(date.fromisoformat(start[:10]) + relativedelta(days=+1)))
+        if end[:10] == str(date.fromisoformat(start[:10]) + relativedelta(days=+1)):
+            end = end.replace(end, start[:10] + ' 23:59')
+        else:
+            day_before_end = str(date.fromisoformat(end[:10]) + relativedelta(days=-1))
+            end = end.replace(end, day_before_end + ' 23:59')
         end_local = end
 
     start_date = str(start_local)[:10]
