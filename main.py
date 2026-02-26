@@ -3,6 +3,7 @@ from datetime import date, datetime, timedelta, timezone
 from dateutil.relativedelta import MO, TU, WE, TH, FR, SA, SU, relativedelta
 from icalendar import Calendar
 from os.path import isfile
+import tkcalendar
 from tkinter import *
 from tkinter import filedialog, scrolledtext
 from tzlocal import get_localzone
@@ -44,7 +45,7 @@ def find_events_this_week(start_date, events, event_info, weekday_nr, is_all_wee
     weekday_abbr = [MO, TU, WE, TH, FR, SA, SU]
     today = date.today()
     if (date.fromisoformat(start_date) < today + relativedelta(weekday=MO(-1)) and
-        date.fromisoformat(event_info[3]) > today + relativedelta(weekday=SU(1)) and is_all_week_event == False):
+            date.fromisoformat(event_info[3]) > today + relativedelta(weekday=SU(1)) and is_all_week_event is False):
         event_info = ['00:00', '23:59', event_info[2], str(today + relativedelta(weekday=SU(1)))]
         events[0].append(event_info)
         is_all_week_event = True
@@ -63,6 +64,7 @@ def find_events_this_week(start_date, events, event_info, weekday_nr, is_all_wee
             event_info[0] = '00:00'
             events[0].append(event_info)
     return is_all_week_event
+
 
 def get_event_info(component):
     start = str(component.get('dtstart'))[10:26]
@@ -97,10 +99,10 @@ def get_event_info(component):
 
     event_name = str(component.get('summary'))
 
-    event_info = [start_time, end_time, event_name, '']
+    event_info = [start_time, end_time, event_name, end_date]
 
-    if start_date != end_date:
-        event_info[3] = end_date
+    # if start_date != end_date:
+    #     event_info[3] = end_date
 
     return event_info, start_date
 
@@ -122,6 +124,21 @@ def initialize_window():
     left = 5
     right = 5
 
+    month = month_name[date.today().month]
+    year = date.today().year
+
+    label_month = Label(bg=blue, font=('Arial', 16), text=str(month) + ' ' + str(year))
+    label_month.grid(row=0, column=0, sticky=W, padx=10, pady=10)
+
+    button = Button(
+        window,
+        bg=light_blue,
+        command=open_file,
+        font=('Arial', 10),
+        text='Open an ICS file',
+    )
+    button.grid(row=0, column=7, sticky=E, padx=10, pady=10)
+
     for i in range(7):
         if day_name[i] != today.strftime('%A'):
             weekdays = weekdays + (Label(bg=blue, font=('Arial', 12), text=day_name[i]),)
@@ -141,9 +158,9 @@ def initialize_window():
             elif i == 3:
                 right = 10
 
-            weekdays[i].grid(row=0, column=i * 2, sticky=W, padx=(left, 5), pady=(10, 5))
-            days[i].grid(row=0, column=i * 2 + 1, sticky=E, padx=(5, right), pady=(10, 5))
-            text[i].grid(row=1, column=i * 2, columnspan=2, padx=(left, right), pady=(5, 5))
+            weekdays[i].grid(row=1, column=i * 2, sticky=W, padx=(left, 5), pady=(10, 5))
+            days[i].grid(row=1, column=i * 2 + 1, sticky=E, padx=(5, right), pady=(10, 5))
+            text[i].grid(row=2, column=i * 2, columnspan=2, padx=(left, right), pady=(5, 5))
 
         else:
             if i == 4:
@@ -151,32 +168,16 @@ def initialize_window():
             elif i == 6:
                 right = 10
 
-            weekdays[i].grid(row=2, column=(i - 4) * 2, sticky=W, padx=(left, 5), pady=(5, 5))
-            days[i].grid(row=2, column=(i - 4) * 2 + 1, sticky=E, padx=(5, right), pady=(5, 5))
-            text[i].grid(row=3, column=(i - 4) * 2, rowspan=3, columnspan=2, padx=(left, right), pady=(5, 10))
+            weekdays[i].grid(row=3, column=(i - 4) * 2, sticky=W, padx=(left, 5), pady=(5, 5))
+            days[i].grid(row=3, column=(i - 4) * 2 + 1, sticky=E, padx=(5, right), pady=(5, 5))
+            text[i].grid(row=4, column=(i - 4) * 2, rowspan=3, columnspan=2, padx=(left, right), pady=(5, 10))
 
         text[i].tag_configure('normal', font=('Arial', 10))
         text[i].tag_configure('bold', font=('Arial', 10, 'bold'))
         text[i].config(state=DISABLED)
 
-    label_title = Label(bg=blue, font=('Arial', 16), text='Weekly Calendar')
-    label_title.grid(row=3, column=6, columnspan=2, padx=10, pady=10)
-    label_title.configure()
-
-    month = month_name[date.today().month]
-    year = date.today().year
-
-    label_month = Label(bg=blue, font=('Arial', 12), text=str(month) + ' ' + str(year))
-    label_month.grid(row=4, column=6, columnspan=2, padx=10, pady=10)
-
-    button = Button(
-        window,
-        bg=light_blue,
-        command=open_file,
-        font=('Arial', 10),
-        text='Open an ICS file',
-    )
-    button.grid(row=5, column=6, columnspan=2, padx=10, pady=10)
+        calendar = tkcalendar.Calendar(window, selectmode='day', year=today.year, month=today.month, day=today.day)
+        calendar.grid(row=3, column=6, rowspan=2, columnspan=2, padx=10, pady=10)
 
     return window, text
 
