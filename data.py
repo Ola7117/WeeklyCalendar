@@ -4,7 +4,7 @@ from tkinter import *
 from tkinter import filedialog
 
 
-def load(text):
+def load(texts):
     if isfile('saved_file_path.txt'):
         with open('saved_file_path.txt', 'r') as f:
             file_path = f.read().strip()
@@ -12,7 +12,7 @@ def load(text):
             data = load_calendar(file_path)
             events = build_week_events(data)
             from ui import display_calendar  # optional if avoiding circular import
-            display_calendar(events, text)
+            display_calendar(events, texts)
 
         f.close()
 
@@ -22,7 +22,7 @@ def load_calendar(file_path):
         return f.read()
 
 
-def open_file(text):
+def open_file(texts):
     file_path = filedialog.askopenfilename(
         filetypes=(('iCalendar', '*.ics'),),
         title='Open'
@@ -32,8 +32,8 @@ def open_file(text):
         save(file_path)
     
         for i in range(7):
-            text[i].config(state=NORMAL)
-            text[i].delete('1.0', END)
+            texts[i].config(state=NORMAL)
+            texts[i].delete('1.0', END)
 
         #display_calendar(file_path)
 
