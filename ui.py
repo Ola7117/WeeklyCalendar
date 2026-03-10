@@ -1,5 +1,5 @@
 from calendar import day_name, month_name
-from data import open_file, load_calendar
+from data import open_file, load, load_calendar
 from datetime import date, datetime
 from dateutil.relativedelta import MO, TU, WE, TH, FR, SA, SU, relativedelta
 from logic import build_week_events
@@ -14,7 +14,7 @@ def display_calendar(events, texts):
 
         for event in events[i]:
             texts[i].insert(END, event[0] + '-' + event[1] + '\n')
-            texs[i].insert(END, event[2] + '\n', 'bold')
+            texts[i].insert(END, event[2] + '\n', 'bold')
 
         texts[i].config(state=DISABLED)
 
@@ -94,12 +94,12 @@ def initialize_window():
 
     calendar = Calendar(window, selectmode='day', year=today.year, month=today.month, day=today.day)
     calendar.grid(row=3, column=6, rowspan=2, columnspan=2, padx=10, pady=10)
-    calendar.bind("<<CalendarSelected>>", lambda event: on_date_click(event, days, weekdays, label_month, dark_blue))
+    calendar.bind("<<CalendarSelected>>", lambda event: on_date_click(event, days, weekdays, label_month, dark_blue, texts))
 
     return window, texts
 
 
-def on_date_click(event, days, weekdays, label_month, dark_blue):
+def on_date_click(event, days, weekdays, label_month, dark_blue, texts):
     calendar = event.widget
     selected_date = calendar.selection_get()
     today = selected_date
@@ -118,6 +118,8 @@ def on_date_click(event, days, weekdays, label_month, dark_blue):
             weekdays[i].config(fg='black', font=('Arial', 12))
 
     label_month.config(text=f"{month_name[today.month]} {today.year}")
+
+    load(texts, today)
 
 
 def on_open_file_clicked(texts):

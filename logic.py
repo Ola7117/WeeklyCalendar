@@ -4,7 +4,7 @@ from icalendar import Calendar
 from tzlocal import get_localzone
 
 
-def build_week_events(ical_bytes):
+def build_week_events(ical_bytes, selected_date):
     calendar = Calendar.from_ical(ical_bytes)
 
     events = [[] for _ in range(7)]
@@ -16,7 +16,7 @@ def build_week_events(ical_bytes):
             is_all_week_event = False
             for i in range(7):
                 is_all_week_event = find_events_this_week(
-                    start_date, events, event_info, i, is_all_week_event
+                    start_date, events, event_info, i, is_all_week_event, selected_date
                 )
 
     for i in range(7):
@@ -29,26 +29,25 @@ def build_week_events(ical_bytes):
     return events
 
 
-def find_events_this_week(start_date, events, event_info, weekday_nr, is_all_week_event):
+def find_events_this_week(start_date, events, event_info, weekday_nr, is_all_week_event, selected_date):
     weekday_abbr = [MO, TU, WE, TH, FR, SA, SU]
-    today = date.today()
-    if (date.fromisoformat(start_date) < today + relativedelta(weekday=MO(-1)) and
-            date.fromisoformat(event_info[3]) > today + relativedelta(weekday=SU(1)) and is_all_week_event is False):
-        event_info = ['00:00', '23:59', event_info[2], str(today + relativedelta(weekday=SU(1)))]
+    if (date.fromisoformat(start_date) < selected_date + relativedelta(weekday=MO(-1)) and
+            date.fromisoformat(event_info[3]) > selected_date + relativedelta(weekday=SU(1)) and is_all_week_event is False):
+        event_info = ['00:00', '23:59', event_info[2], str(selected_date + relativedelta(weekday=SU(1)))]
         events[0].append(event_info)
         is_all_week_event = True
-    elif today.weekday() > weekday_nr:
-        if start_date == str(today + relativedelta(weekday=weekday_abbr[weekday_nr](-1))):
+    elif selected_date.weekday() > weekday_nr:
+        if start_date == str(selected_date + relativedelta(weekday=weekday_abbr[weekday_nr](-1))):
             events[weekday_nr].append(event_info)
-        elif (date.fromisoformat(start_date).isocalendar().week != today.isocalendar().week and
-              event_info[3] == str(today + relativedelta(weekday=weekday_abbr[weekday_nr](-1)))):
+        elif (date.fromisoformat(start_date).isocalendar().week != selected_date.isocalendar().week and
+              event_info[3] == str(selected_date + relativedelta(weekday=weekday_abbr[weekday_nr](-1)))):
             event_info[0] = '00:00'
             events[0].append(event_info)
-    elif today.weekday() <= weekday_nr:
-        if start_date == str(today + relativedelta(weekday=weekday_nr)):
+    elif selected_date.weekday() <= weekday_nr:
+        if start_date == str(selected_date + relativedelta(weekday=weekday_nr)):
             events[weekday_nr].append(event_info)
-        elif (date.fromisoformat(start_date).isocalendar().week != today.isocalendar().week and
-              event_info[3] == str(today + relativedelta(weekday=weekday_nr))):
+        elif (date.fromisoformat(start_date).isocalendar().week != selected_date.isocalendar().week and
+              event_info[3] == str(selected_date + relativedelta(weekday=weekday_nr))):
             event_info[0] = '00:00'
             events[0].append(event_info)
     return is_all_week_event
